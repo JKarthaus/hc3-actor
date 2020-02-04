@@ -1,6 +1,6 @@
         
 ![](https://joern-karthaus.de/heatingControl/img/hc3logo-small.png)
-# hc3-display
+# hc3-actor
 HC3 Actor Microservice -> Switches Relais ON/OFF.
 
 This Microservice receive Commands from other Microservices via aqmp 
