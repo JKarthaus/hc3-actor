@@ -82,9 +82,11 @@ def callback(ch, method, properties, body):
     ch.basic_ack(delivery_tag=method.delivery_tag)
     logging.debug("Message arrived")
 
-    if body.find("=") != -1:
-        pin = body[0:body.find("=")]
-        state = body[body.find("=")+1:]
+    stringBody = "".join(map(chr, body))
+
+    if stringBody.find("=") != -1:
+        pin = stringBody[0:stringBody.find("=")]
+        state = stringBody[stringBody.find("=")+1:]
         if state.strip().upper() == "ON" or state.strip().upper() == "OFF":
             try:
                 ports.index(pin)
