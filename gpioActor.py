@@ -1,11 +1,10 @@
 #!/usr/bin/env python
 import pika
 import sys
-from threading import Thread
-import threading
 import time
 import logging
 import os
+import traceback
 
 rabbitMqHost = os.environ['RABBIT_MQ_HOST']
 rabbitMqQueue = os.environ['RABBIT_MQ_QUEUE']
@@ -61,29 +60,28 @@ def openConnection():
     global rabbitMqHost
     global rabbitMqQueue
 
-    connection = pika.BlockingConnection(
-        pika.ConnectionParameters(host=rabbitMqHost))
+    logging.info("Open Connection on Host:" + rabbitMqHost + " Queue:" + rabbitMqQueue)
+    connection = pika.BlockingConnection(pika.ConnectionParameters(host=rabbitMqHost))
     channel = connection.channel()
-    channel.queue_declare(queue=rabbitMqQueue)
-
-    channel.basic_consume(queue=rabbitMqQueue,
-                          auto_ack=True,
-                          on_message_callback=callback)
-
-    logging.info("Waiting for Messages...")
+    channel.basic_consume(queue=rabbitMqQueue, on_message_callback=callback)
+    logging.info("Waiting for Messages on Queue:" + rabbitMqQueue)
     channel.start_consuming()
 # -------------------------------------------------------------------------------------------------------
 
 
 def closeConnection():
     global connection
-    connection.close
+    connection.close()
 # -------------------------------------------------------------------------------------------------------
 
 
 def callback(ch, method, properties, body):
     global rabbitMqQueue
     global ports
+
+    ch.basic_ack(delivery_tag=method.delivery_tag)
+    logging.debug("Message arrived")
+
     if body.find("=") != -1:
         pin = body[0:body.find("=")]
         state = body[body.find("=")+1:]
@@ -120,5 +118,6 @@ if __name__ == '__main__':
         logging.info("---------------------------------------------")
         logging.info("-- CRITICAL ERROR OCCURED...")
         logging.info("---------------------------------------------")
+        traceback.print_exc(file=sys.stdout)
         time.sleep(5)
         sys.exit(2)
