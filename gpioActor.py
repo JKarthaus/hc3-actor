@@ -6,55 +6,21 @@ import threading
 import time
 import logging
 import os
+import piRelay
 
 rabbitMqHost = os.environ['RABBIT_MQ_HOST']
 rabbitMqQueue = os.environ['RABBIT_MQ_QUEUE']
-demoMode = eval(os.environ.get('DEMO_MODE',False))
+demoMode = eval(os.environ.get('DEMO_MODE', False))
 
 connection = pika.BlockingConnection
 
-ports = ["21", "20", "12", "16", "8", "7", "24", "25"]
+relaisHats = {piRelay.Relay("RELAY1"),
+              piRelay.Relay("RELAY2"),
+              piRelay.Relay("RELAY3"),
+              piRelay.Relay("RELAY4")}
+
 
 # -------------------------------------------------------------------------------------------------------
-
-
-def initGpioPorts():
-    global ports
-    logging.info("Port initialisation...")
-    if not demoMode:
-        for entry in ports:
-            if os.path.isdir("/sys/class/gpio/gpio" + entry) == False:
-                logging.info("Init Gpio Port : " + entry)
-                f = open("/sys/class/gpio/export", "w")
-                f.write(entry)
-                f.close()
-            else:
-                logging.info("Pin:" + entry + " already initialized")
-        time.sleep(1)
-        logging.info("Setting Port Directions to OUT")
-        for entry in ports:
-            logging.info("Set Port:" + entry + " as OUTPUT Port")
-            f = open("/sys/class/gpio/gpio" + entry + "/direction", "w")
-            f.write("out")
-            f.close()
-    else:
-        logging.info("This is the Demo Mode - Port initialisation skipped")
-# -------------------------------------------------------------------------------------------------------
-
-
-def setPort(pin, value):
-    logging.info("Set PIN:" + pin + " to value:" + value)
-    if not demoMode:
-        f = open("/sys/class/gpio/gpio" + pin + "/value", "w")
-        if value == "ON":
-            f.write("1")
-        else:
-            f.write("0")
-        f.close()
-    else:
-        logging.info("Write to Pin skipped in Demo Mode")
-# -------------------------------------------------------------------------------------------------------
-
 
 def openConnection():
     global connection
@@ -72,32 +38,43 @@ def openConnection():
 
     logging.info("Waiting for Messages...")
     channel.start_consuming()
+
+
 # -------------------------------------------------------------------------------------------------------
 
 
 def closeConnection():
     global connection
     connection.close
-# -------------------------------------------------------------------------------------------------------
 
+
+# -------------------------------------------------------------------------------------------------------
 
 def callback(ch, method, properties, body):
     global rabbitMqQueue
-    global ports
+    global relaisHats
     if body.find("=") != -1:
-        pin = body[0:body.find("=")]
-        state = body[body.find("=")+1:]
-        if state.strip().upper() == "ON" or state.strip().upper() == "OFF":
+        relaisIndex = body[0:body.find("=")]
+        state = body[body.find("=") + 1:]
+        if state.strip().upper() == "ON":
             try:
-                ports.index(pin)
-                setPort(pin, state)
+                relaisHats[relaisIndex].on()
+                logging.info("Switch Relais:" + relaisIndex + " to ON")
             except ValueError:
-                logging.error("PIN:" + pin + " not configured...")
+                logging.error("Error while setting State of Ralais:" + relaisIndex + " to ON")
+        elif state.strip().upper() == "OFF":
+            try:
+                relaisHats[relaisIndex].on()
+                logging.info("Switch Relais:" + relaisIndex + " to OFF")
+            except ValueError:
+                logging.error("Error while setting State of Ralais:" + relaisIndex + " to OFF")
         else:
             logging.error("STATE is NOT ON or OFF -> " + state.strip().upper())
     else:
         logging.info("Message on Channel: " + rabbitMqQueue +
-                     " has an unexpectedly Format -> expecting PinNumber=ON/OFF")
+                     " has an unexpectedly Format -> expecting relaisNumber=ON/OFF")
+
+
 # -------------------------------------------------------------------------------------------------------
 
 
@@ -105,9 +82,7 @@ def main():
     logging.basicConfig(level=logging.INFO)
     logging.info("---------------------------------------------")
     logging.info('gpioActor Started')
-    initGpioPorts()
     openConnection()
-
     logging.info('Finished')
     closeConnection()
     logging.info("---------------------------------------------")
