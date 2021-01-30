@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+
 import pika
 import sys
 from threading import Thread
