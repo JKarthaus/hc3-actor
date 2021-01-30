@@ -2,8 +2,11 @@ FROM python:3.8-alpine
 
 WORKDIR /usr/src/app
 
-RUN pip install --no-cache-dir pika
+RUN apk add make gcc python3-dev libc-dev linux-headers
 
-COPY gpioActor.py ./
+RUN pip install --no-cache-dir pika smbus RPi.GPIO
+
+COPY *.py ./
 
 CMD [ "python3", "./gpioActor.py" ]
+
