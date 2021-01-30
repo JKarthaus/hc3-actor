@@ -8,5 +8,5 @@ RUN pip install --no-cache-dir pika smbus RPi.GPIO
 
 COPY *.py ./
 
-CMD [ "python3", "./gpioActor.py" ]
+CMD [ "python3", "./hc3Actor.py" ]
 
