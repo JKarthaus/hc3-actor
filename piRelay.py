@@ -6,11 +6,8 @@ except RuntimeError:
     print(
         "Error importing RPi.GPIO!  This is probably because you need superuser privileges.  You can achieve this by using 'sudo' to run your script")
 
-import timecode.con
-
 GPIO.setmode(GPIO.BCM)
 GPIO.setwarnings(True)
-
 
 class Relay:
     ''' Class to handle Relay
