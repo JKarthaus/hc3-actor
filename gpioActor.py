@@ -86,9 +86,10 @@ def main():
 if __name__ == '__main__':
     try:
         main()
-    except:
+    except Exception as e:
         logging.info("---------------------------------------------")
         logging.info("-- CRITICAL ERROR OCCURED...")
         logging.info("---------------------------------------------")
+        logging.error(e)
         time.sleep(5)
         sys.exit(2)
