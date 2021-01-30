@@ -14,10 +14,10 @@ demoMode = eval(os.environ.get('DEMO_MODE', False))
 
 connection = pika.BlockingConnection
 
-relaisHats = {piRelay.Relay("RELAY1"),
+relaisHats = [piRelay.Relay("RELAY1"),
               piRelay.Relay("RELAY2"),
               piRelay.Relay("RELAY3"),
-              piRelay.Relay("RELAY4")}
+              piRelay.Relay("RELAY4")]
 
 
 # -------------------------------------------------------------------------------------------------------
@@ -48,20 +48,24 @@ def callback(ch, method, properties, body):
     global relaisHats
     ch.basic_ack(delivery_tag=method.delivery_tag)
     if body.find("=") != -1:
+        logging.debug("Message arrived:" + body)
         relaisIndex = body[0:body.find("=")]
-        logging.debug("Message arrived")
         state = body[body.find("=") + 1:]
+
         if state.strip().upper() == "ON":
             try:
-                relaisHats[relaisIndex].on()
+                relaisHats[int(relaisIndex)-1].on()
                 logging.info("Switch Relais:" + relaisIndex + " to ON")
-            except ValueError:
+            except Exception as e:
+                logging.error(e)
                 logging.error("Error while setting State of Ralais:" + relaisIndex + " to ON")
+        
         elif state.strip().upper() == "OFF":
             try:
-                relaisHats[relaisIndex].on()
+                relaisHats[int(relaisIndex)-1].off()
                 logging.info("Switch Relais:" + relaisIndex + " to OFF")
-            except ValueError:
+            except Exception as e:
+                logging.error(e)
                 logging.error("Error while setting State of Ralais:" + relaisIndex + " to OFF")
         else:
             logging.error("STATE is NOT ON or OFF -> " + state.strip().upper())
