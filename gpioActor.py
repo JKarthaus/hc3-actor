@@ -27,18 +27,11 @@ def openConnection():
     global rabbitMqHost
     global rabbitMqQueue
 
-    connection = pika.BlockingConnection(
-        pika.ConnectionParameters(host=rabbitMqHost))
+    connection = pika.BlockingConnection(pika.ConnectionParameters(host=rabbitMqHost))
     channel = connection.channel()
-    channel.queue_declare(queue=rabbitMqQueue)
-
-    channel.basic_consume(queue=rabbitMqQueue,
-                          auto_ack=True,
-                          on_message_callback=callback)
-
-    logging.info("Waiting for Messages...")
+    channel.basic_consume(queue=rabbitMqQueue,on_message_callback=callback)
+    logging.info("Waiting for Messages on Queue:" + rabbitMqQueue)
     channel.start_consuming()
-
 
 # -------------------------------------------------------------------------------------------------------
 
@@ -53,8 +46,10 @@ def closeConnection():
 def callback(ch, method, properties, body):
     global rabbitMqQueue
     global relaisHats
+    ch.basic_ack(delivery_tag=method.delivery_tag)
     if body.find("=") != -1:
         relaisIndex = body[0:body.find("=")]
+        logging.debug("Message arrived")
         state = body[body.find("=") + 1:]
         if state.strip().upper() == "ON":
             try:
