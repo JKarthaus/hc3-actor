@@ -7,6 +7,7 @@ import time
 import logging
 import os
 import piRelay
+import traceback 
 
 rabbitMqHost = os.environ['RABBIT_MQ_HOST']
 rabbitMqQueue = os.environ['RABBIT_MQ_QUEUE']
@@ -47,10 +48,13 @@ def callback(ch, method, properties, body):
     global rabbitMqQueue
     global relaisHats
     ch.basic_ack(delivery_tag=method.delivery_tag)
-    if body.find("=") != -1:
-        logging.debug("Message arrived:" + body)
-        relaisIndex = body[0:body.find("=")]
-        state = body[body.find("=") + 1:]
+
+    stringBody=body.decode()
+    
+    if stringBody.find("=") != -1:
+        logging.debug("Message arrived:" + stringBody)
+        relaisIndex = stringBody[0:stringBody.find("=")]
+        state = stringBody[stringBody.find("=") + 1:]
 
         if state.strip().upper() == "ON":
             try:
@@ -94,6 +98,7 @@ if __name__ == '__main__':
         logging.info("---------------------------------------------")
         logging.info("-- CRITICAL ERROR OCCURED...")
         logging.info("---------------------------------------------")
+        traceback.print_exc() 
         logging.error(e)
         time.sleep(5)
         sys.exit(2)
